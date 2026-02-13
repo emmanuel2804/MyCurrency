@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "mycurrency"
+version = "0.1.0"
+description = "platform that allows users to calculate currency"
+authors = ["exchange rates."]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.5"
+django = "5.2.11"
+djangorestframework = "^3.16.1"
+celery = "^5.6.2"
+redis = "^7.1.1"
+python-dotenv = "^1.2.1"
+django-filter = "^25.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
