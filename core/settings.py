@@ -79,10 +79,11 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Plataforma de Cambio API',
-    'DESCRIPTION': 'Sistema de intercambio con fallback dinámico',
+    'TITLE': 'Currency exchange rates API',
+    'DESCRIPTION': 'Currency exchange rates API with multiple providers and fallback mechanism.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'TAGS_SORTER': 'alpha',
 }
 
 
