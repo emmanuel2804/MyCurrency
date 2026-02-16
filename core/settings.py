@@ -13,9 +13,14 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
+
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 
 
@@ -23,10 +28,10 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(e8sxots72yafbh(_a6rptet+dkb-^riaz&0(i6zm581vy9pe)'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -148,3 +153,9 @@ CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+
+# Currency Beacon API Configuration
+
+CURRENCY_BEACON_API_KEY = os.environ.get('CURRENCY_BEACON_KEY')
+CURRENCY_BEACON_URL = os.environ.get('CURRENCY_BEACON_URL')
