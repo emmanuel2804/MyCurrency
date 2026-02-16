@@ -3,6 +3,6 @@ from celery import Celery
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 
-app = Celery('mi_plataforma')
+app = Celery('MyCurrency')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()

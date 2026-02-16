@@ -1,0 +1,330 @@
+{
+	"info": {
+		"_postman_id": "mycurrency-api-collection",
+		"name": "MyCurrency API",
+		"description": "Currency exchange rates API with multiple providers and fallback mechanism",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api/v1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Currencies",
+			"item": [
+				{
+					"name": "List Currencies",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/currencies/",
+							"host": ["{{base_url}}"],
+							"path": ["currencies", ""]
+						}
+					}
+				},
+				{
+					"name": "Create Currency",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"EUR\",\n  \"name\": \"Euro\",\n  \"symbol\": \"€\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/currencies/",
+							"host": ["{{base_url}}"],
+							"path": ["currencies", ""]
+						}
+					}
+				},
+				{
+					"name": "Get Currency",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/currencies/:id/",
+							"host": ["{{base_url}}"],
+							"path": ["currencies", ":id", ""],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Currency",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"EUR\",\n  \"name\": \"Euro\",\n  \"symbol\": \"€\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/currencies/:id/",
+							"host": ["{{base_url}}"],
+							"path": ["currencies", ":id", ""],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Currency",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/currencies/:id/",
+							"host": ["{{base_url}}"],
+							"path": ["currencies", ":id", ""],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Exchange Rates",
+			"item": [
+				{
+					"name": "List Rates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/rates/",
+							"host": ["{{base_url}}"],
+							"path": ["rates", ""]
+						}
+					}
+				},
+				{
+					"name": "Time Series",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/rates/time-series/?source_currency=EUR&date_from=2024-01-01&date_to=2024-01-31",
+							"host": ["{{base_url}}"],
+							"path": ["rates", "time-series", ""],
+							"query": [
+								{
+									"key": "source_currency",
+									"value": "EUR",
+									"description": "Source currency code"
+								},
+								{
+									"key": "date_from",
+									"value": "2024-01-01",
+									"description": "Start date (YYYY-MM-DD)"
+								},
+								{
+									"key": "date_to",
+									"value": "2024-01-31",
+									"description": "End date (YYYY-MM-DD)"
+								}
+							]
+						},
+						"description": "Get time series of exchange rates for all currencies from a base currency"
+					}
+				},
+				{
+					"name": "Convert Amount",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/rates/convert/?source_currency=EUR&exchanged_currency=USD&amount=100",
+							"host": ["{{base_url}}"],
+							"path": ["rates", "convert", ""],
+							"query": [
+								{
+									"key": "source_currency",
+									"value": "EUR",
+									"description": "Source currency code"
+								},
+								{
+									"key": "exchanged_currency",
+									"value": "USD",
+									"description": "Target currency code"
+								},
+								{
+									"key": "amount",
+									"value": "100",
+									"description": "Amount to convert"
+								},
+								{
+									"key": "valuation_date",
+									"value": "2024-01-15",
+									"description": "Optional: Date for the rate (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Convert amount from one currency to another"
+					}
+				}
+			]
+		},
+		{
+			"name": "Providers",
+			"item": [
+				{
+					"name": "List Providers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/providers/",
+							"host": ["{{base_url}}"],
+							"path": ["providers", ""]
+						}
+					}
+				},
+				{
+					"name": "Create Provider",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"currency_beacon\",\n  \"priority\": 1,\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/providers/",
+							"host": ["{{base_url}}"],
+							"path": ["providers", ""]
+						}
+					}
+				},
+				{
+					"name": "Get Provider",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/providers/:id/",
+							"host": ["{{base_url}}"],
+							"path": ["providers", ":id", ""],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Provider",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"currency_beacon\",\n  \"priority\": 1,\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/providers/:id/",
+							"host": ["{{base_url}}"],
+							"path": ["providers", ":id", ""],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Partial Update Provider",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"is_active\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/providers/:id/",
+							"host": ["{{base_url}}"],
+							"path": ["providers", ":id", ""],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update provider priority or active status"
+					}
+				},
+				{
+					"name": "Delete Provider",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/providers/:id/",
+							"host": ["{{base_url}}"],
+							"path": ["providers", ":id", ""],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

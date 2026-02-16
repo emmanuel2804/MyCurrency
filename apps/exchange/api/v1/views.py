@@ -4,7 +4,7 @@ Each ViewSet exposes standard CRUD operations via DRF router.
 """
 
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -47,7 +47,7 @@ class CurrencyExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
             OpenApiParameter("date_from", OpenApiTypes.DATE, required=True, description="Start date (YYYY-MM-DD)"),
             OpenApiParameter("date_to", OpenApiTypes.DATE, required=True, description="End date (YYYY-MM-DD)"),
         ],
-        description="Get time series of exchange rates for a source currency"
+        description="Get time series of exchange rates for a source currency across all available currencies"
     )
     @action(detail=False, methods=['get'], url_path='time-series')
     def time_series(self, request):
@@ -67,13 +67,12 @@ class CurrencyExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
         date_from_str = request.query_params.get('date_from')
         date_to_str = request.query_params.get('date_to')
 
-        # Validation
         if not all([source_currency_code, date_from_str, date_to_str]):
             return Response(
                 {"error": "source_currency, date_from, and date_to are required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             date_from = datetime.strptime(date_from_str, "%Y-%m-%d").date()
             date_to = datetime.strptime(date_to_str, "%Y-%m-%d").date()
@@ -89,7 +88,6 @@ class CurrencyExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Get or create rates
         try:
             source_currency = Currency.objects.get(code=source_currency_code.upper())
         except Currency.DoesNotExist:
@@ -98,20 +96,35 @@ class CurrencyExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Query existing rates
-        rates = CurrencyExchangeRate.objects.filter(
-            source_currency=source_currency,
-            valuation_date__gte=date_from,
-            valuation_date__lte=date_to
-        ).select_related('source_currency', 'exchanged_currency')
+        all_currencies = Currency.objects.exclude(id=source_currency.id).all()
 
-        # Serialize and return
-        serializer = self.get_serializer(rates, many=True)
+        results = []
+        current_date = date_from
+
+        while current_date <= date_to:
+            for target_currency in all_currencies:
+                rate_value = ExchangeRateService.get_exchange_rate(
+                    source_currency.code,
+                    target_currency.code,
+                    current_date
+                )
+
+                if rate_value:
+                    results.append({
+                        "source_currency": source_currency.code,
+                        "exchanged_currency": target_currency.code,
+                        "valuation_date": current_date.strftime("%Y-%m-%d"),
+                        "rate_value": str(rate_value)
+                    })
+
+            current_date += timedelta(days=1)
+
         return Response({
             "source_currency": source_currency_code.upper(),
             "date_from": date_from_str,
             "date_to": date_to_str,
-            "rates": serializer.data
+            "total_rates": len(results),
+            "rates": results
         })
 
     @extend_schema(

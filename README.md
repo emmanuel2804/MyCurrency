@@ -1,17 +1,14 @@
-# 💱 MyCurrency
+# MyCurrency
 
-**Web platform to calculate currency exchange rates**
+Web platform to calculate currency exchange rates.
 
-MyCurrency is a Django REST API that provides real-time and historical currency exchange rates. It consumes data from external providers (CurrencyBeacon) and stores it locally for fast, resilient API access. The system is designed to be extensible: new providers can be added by implementing an interface and registering them, without modifying existing logic.
+Django REST API that provides real-time and historical currency exchange rates. Consumes data from external providers (CurrencyBeacon) and stores it locally for fast, resilient API access.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
-# Clone and navigate
-cd MyCurrency
-
 # Start all services
 docker-compose up
 
@@ -29,19 +26,20 @@ docker-compose run --rm web python manage.py createsuperuser
 
 ---
 
-## 📚 Stack & Architecture
+## Stack
 
-### Technology Stack
 - **Python 3.11**
 - **Django 5.2** + **Django REST Framework**
 - **PostgreSQL** (database)
 - **Redis** (Celery broker)
-- **Celery** + **Celery Beat** (async tasks & scheduling)
+- **Celery** + **Celery Beat** (async tasks)
 - **Poetry** (dependency management)
 - **Docker** + **Docker Compose**
-- **drf-spectacular** (OpenAPI/Swagger documentation)
+- **drf-spectacular** (OpenAPI/Swagger)
 
-### Architecture Pattern
+---
+
+## Architecture
 
 **Domain-Driven Design (DDD) + Hexagonal Architecture**
 
@@ -56,7 +54,6 @@ apps/exchange/
 │   └── tasks.py              # Celery Tasks
 ├── domain/                    # Domain Layer (Business Logic)
 │   ├── interfaces.py         # Contracts (ABC)
-│   ├── models.py             # Domain Models
 │   └── services.py           # Domain Services
 └── infrastructure/            # Infrastructure Layer
     ├── persistence/
@@ -70,110 +67,31 @@ apps/exchange/
 
 ### Key Design Decisions
 
-**🔄 Adapter Pattern for Providers**
+**Adapter Pattern for Providers**
 - All providers implement `BaseExchangeRateProvider` interface
 - New providers can be added without modifying existing code
-- Providers are registered via enum → class mapping
 
-**🔗 Fallback Chain Mechanism**
+**Fallback Chain Mechanism**
 - Providers are ordered by priority (database field)
 - If primary provider fails, system automatically tries next one
 - Results are cached in database for fast subsequent access
 
-**🆔 UUID Primary Keys**
-- All models use UUIDs instead of sequential integers
-- Prevents ID enumeration attacks
-- Facilitates future distributed systems
+**Concurrency for Historical Data**
 
-**⚡ Concurrency for Historical Data**
-- Uses `asyncio` + `aiohttp` for I/O-bound operations
-- Allows dozens of simultaneous HTTP requests without threading overhead
-- **Why asyncio?** The bottleneck is network I/O, not CPU computation
+Uses `asyncio` + `aiohttp` for I/O-bound operations instead of parallelism.
 
----
+**Why concurrency over parallelism?**
 
-## 🌐 Supported Currencies
+The bottleneck is **network I/O** (waiting for HTTP responses), not CPU computation.
 
-- **EUR** - Euro (€)
-- **USD** - US Dollar ($)
-- **GBP** - British Pound (£)
-- **CHF** - Swiss Franc (CHF)
+- **Concurrency (asyncio)**: Single thread handles dozens of simultaneous HTTP requests
+- **Parallelism (multiprocessing)**: Multiple processes/threads for CPU-bound work
 
-Currencies are seeded via database migrations.
+Since we're waiting on external APIs, concurrency maximizes throughput without the overhead of threads or processes. One thread can manage 50+ concurrent requests efficiently.
 
 ---
 
-## 📡 API Endpoints
-
-### Base URL: `/api/v1/exchange/`
-
-#### **Currencies**
-```http
-GET    /currencies/           # List all currencies
-POST   /currencies/           # Create currency
-GET    /currencies/{id}/      # Get currency details
-PUT    /currencies/{id}/      # Update currency
-DELETE /currencies/{id}/      # Delete currency
-```
-
-#### **Exchange Rates**
-```http
-GET    /rates/                # List all rates
-GET    /rates/{id}/           # Get rate details
-
-# Custom Actions:
-GET    /rates/time-series/    # Get time series data
-GET    /rates/convert/        # Convert amount
-```
-
-**Time Series Example:**
-```http
-GET /rates/time-series/?source_currency=EUR&date_from=2024-01-01&date_to=2024-01-31
-
-Response:
-{
-  "source_currency": "EUR",
-  "date_from": "2024-01-01",
-  "date_to": "2024-01-31",
-  "rates": [
-    {
-      "source_currency": {"code": "EUR", ...},
-      "exchanged_currency": {"code": "USD", ...},
-      "rate_value": "1.085200",
-      "valuation_date": "2024-01-01"
-    },
-    ...
-  ]
-}
-```
-
-**Convert Amount Example:**
-```http
-GET /rates/convert/?source_currency=EUR&exchanged_currency=USD&amount=100
-
-Response:
-{
-  "source_currency": "EUR",
-  "exchanged_currency": "USD",
-  "amount": "100",
-  "rate": "1.085200",
-  "converted_amount": "108.520000",
-  "valuation_date": "2024-02-16"
-}
-```
-
-#### **Providers**
-```http
-GET    /providers/            # List all providers
-POST   /providers/            # Create provider
-GET    /providers/{id}/       # Get provider details
-PUT    /providers/{id}/       # Update provider (priority, is_active)
-DELETE /providers/{id}/       # Delete provider
-```
-
----
-
-## 🔑 Environment Variables
+## Environment Variables
 
 Create a `.env` file in the project root:
 
@@ -198,7 +116,7 @@ CURRENCY_BEACON_URL=https://api.currencybeacon.com/v1
 
 ---
 
-## 🔧 Development Setup
+## Development Setup
 
 ### Option 1: Docker (Recommended)
 
@@ -211,11 +129,6 @@ docker-compose run --rm web python manage.py migrate
 
 # Create superuser
 docker-compose run --rm web python manage.py createsuperuser
-
-# Access services:
-# - API: http://localhost:8000/api/v1/
-# - Admin: http://localhost:8000/admin/
-# - API Docs: http://localhost:8000/api/docs/
 ```
 
 ### Option 2: Local Development
@@ -248,84 +161,61 @@ python manage.py runserver
 
 ---
 
-## 🤖 Celery Tasks & Scheduling
+## Loading Historical Data
 
-### Background Tasks
+Backfill historical exchange rate data for a date range.
 
-The system includes several Celery tasks for data synchronization:
+### Command
 
-1. **`sync_exchange_rates_for_today()`**
-   - Syncs rates for all currency pairs for today
-   - Scheduled daily at 00:30 UTC
+```bash
+# Asynchronous mode (recommended for large date ranges)
+python manage.py load_historical --from 2024-01-01 --to 2024-12-31
 
-2. **`cleanup_old_exchange_rates(days_to_keep=90)`**
-   - Removes rates older than 90 days
-   - Scheduled weekly on Sundays at 02:00 UTC
+# With Docker
+docker-compose run --rm web python manage.py load_historical --from 2024-01-01 --to 2024-12-31
 
-3. **`check_providers_health()`**
-   - Tests all providers with USD→EUR conversion
-   - Scheduled every 6 hours
-
-4. **`sync_missing_rates_for_currency_pair(source, target, date_from, date_to)`**
-   - Fills gaps in historical data for specific pair
-   - Can be triggered manually
-
-### Celery Beat Schedule
-
-```python
-CELERY_BEAT_SCHEDULE = {
-    'sync-rates-daily': {
-        'task': 'sync_exchange_rates_for_today',
-        'schedule': crontab(hour=0, minute=30),
-    },
-    'cleanup-old-rates': {
-        'task': 'cleanup_old_exchange_rates',
-        'schedule': crontab(hour=2, minute=0, day_of_week=0),
-        'kwargs': {'days_to_keep': 90},
-    },
-    'check-providers-health': {
-        'task': 'check_providers_health',
-        'schedule': crontab(minute=0, hour='*/6'),
-    },
-}
+# Synchronous mode (useful for debugging)
+python manage.py load_historical --from 2024-01-01 --to 2024-12-31 --sync
 ```
 
----
+### How It Works
 
-## 🎭 Admin Panel
+1. **Concurrent I/O**: Uses `asyncio` + `aiohttp` for concurrent HTTP requests
+   - Fetches dozens of currency pairs simultaneously
+   - Network I/O is the bottleneck, not CPU
 
-Access at: **http://localhost:8000/admin/**
+2. **Smart Fetching**: For each date in the range:
+   - Fetches rates for ALL currency pairs
+   - Skips rates that already exist in database
+   - Uses the provider fallback mechanism
 
-### Features
+3. **Efficient Storage**: Uses Django's `bulk_create()` to insert rates in batches
 
-1. **Currency Management**
-   - CRUD operations for currencies
-   - Search and filter capabilities
+### Performance
 
-2. **Exchange Rates**
-   - View all stored rates
-   - Filter by date, currency pair
-   - Date hierarchy for easy navigation
-
-3. **Provider Management**
-   - Configure provider priority
-   - Activate/deactivate providers
-   - Bulk actions for status changes
-
-4. **💱 Currency Converter Tool**
-   - **URL:** `/admin/exchange/converter/`
-   - Interactive converter with:
-     - Select source currency
-     - Choose multiple target currencies
-     - Specify amount
-     - Optional date selection
-     - Real-time conversion using fallback mechanism
+- **4 currencies** × **3 months** = ~720 rates → ~30 seconds
+- **10 currencies** × **1 year** = ~32,850 rates → ~5 minutes
 
 ---
 
-## 🧪 Testing
+## API Documentation
 
-### Run All Tests
+- **Swagger UI**: http://localhost:8000/api/docs/
+- **API Schema**: http://localhost:8000/api/schema/
+- **ReDoc**: http://localhost:8000/api/redoc/
+
+Main endpoints:
+- `/api/v1/currencies/` - CRUD operations
+- `/api/v1/rates/` - List rates
+- `/api/v1/rates/time-series/` - Get time series data
+- `/api/v1/rates/convert/` - Convert amount between currencies
+- `/api/v1/providers/` - CRUD operations for providers
+
+**Postman Collection**: `MyCurrency.postman_collection.json`
+
+---
+
+## Testing
 
 ```bash
 # With Docker
@@ -335,132 +225,9 @@ docker-compose run --rm web python -m pytest tests/ -v
 python -m pytest tests/ -v
 ```
 
-### Test Coverage
-
-```
-108 tests passing:
-- Providers (MockProvider, CurrencyBeacon, Registry): 19 tests
-- Domain Services: 11 tests
-- Repositories: 23 tests
-- Serializers: 10 tests
-- API Views: 22 tests
-- Celery Tasks: 11 tests
-- DTOs: 12 tests
-```
-
-### Test Structure
-
-```
-tests/
-├── apps/exchange/
-│   ├── api/v1/
-│   │   ├── test_serializers.py
-│   │   └── test_views.py
-│   ├── application/
-│   │   ├── test_dto.py
-│   │   └── test_tasks.py
-│   ├── domain/
-│   │   └── test_services.py
-│   └── infrastructure/
-│       ├── persistence/
-│       │   └── test_repositories.py
-│       └── providers/
-│           ├── test_currency_beacon.py
-│           ├── test_mock.py
-│           └── test_registry.py
-```
-
 ---
 
-## 📊 Data Flow
-
-### Rate Retrieval Flow
-
-```
-1. API Request → ViewSet
-2. ViewSet → Domain Service (ExchangeRateService)
-3. Service checks Database first
-   ├─ Found → Return immediately
-   └─ Not found → Query Providers
-4. Provider Registry returns active providers by priority
-5. Service tries each provider in order
-   ├─ Provider 1 succeeds → Save to DB → Return
-   └─ Provider 1 fails → Try Provider 2 → ...
-6. If all fail → Return None
-```
-
-### Provider Fallback Example
-
-```
-Configuration in DB:
-- CurrencyBeacon (priority=1, active=true)
-- MockProvider (priority=2, active=true)
-
-Flow:
-1. Check DB → Not found
-2. Try CurrencyBeacon (priority 1)
-   └─ Timeout/Error → Next
-3. Try MockProvider (priority 2)
-   └─ Success → Save & Return
-```
-
----
-
-## 🚀 Possible Improvements
-
-### Short Term
-- **Hourly Granularity:** Support intraday rates
-- **Redis Caching:** Cache hot rates (EUR/USD, etc.)
-- **Rate Limiting:** Throttle API requests per user
-- **Webhooks:** Notify external services on rate updates
-
-### Medium Term
-- **JWT Authentication:** Secure API with tokens
-- **API v2:** GraphQL interface
-- **More Providers:** Add Fixer.io, Open Exchange Rates
-- **Currency Autocomplete:** Frontend-friendly search
-
-### Long Term
-- **CI/CD Pipeline:** GitHub Actions + automated deployment
-- **Monitoring:** Prometheus + Grafana dashboards
-- **Multi-region:** Deploy to multiple data centers
-- **Historical Analytics:** Trend analysis & predictions
-
----
-
-## 📝 License
-
-This project is for educational purposes.
-
----
-
-## 👤 Author
-
-Built with ❤️ by Emmanuel using Django + DRF
-
----
-
-## 🤝 Contributing
-
-This is an educational project, but suggestions and improvements are welcome!
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📖 Additional Documentation
-
-- **API Documentation:** http://localhost:8000/api/docs/ (Swagger UI)
-- **API Schema:** http://localhost:8000/api/schema/ (OpenAPI 3.0)
-- **ReDoc:** http://localhost:8000/api/redoc/ (Alternative API docs)
-
----
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Docker Issues
 
@@ -486,19 +253,14 @@ docker-compose logs worker
 docker-compose restart worker
 ```
 
-### Database Connection Issues
+---
 
-```bash
-# Check PostgreSQL is running
-docker-compose ps db
+## License
 
-# Check database logs
-docker-compose logs db
-
-# Reset database
-docker-compose run --rm web python manage.py migrate --run-syncdb
-```
+This project is for educational purposes.
 
 ---
 
-**Happy Currency Converting! 💱**
+## Author
+
+Built with Django + DRF
