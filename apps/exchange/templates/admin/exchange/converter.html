@@ -1,0 +1,252 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .converter-container {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+
+    .converter-form {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .currency-checkboxes {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .currency-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        background: #f5f5f5;
+        border-radius: 4px;
+    }
+
+    .currency-checkbox input {
+        margin-right: 8px;
+    }
+
+    .submit-btn {
+        background: #417690;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .submit-btn:hover {
+        background: #2c5d7a;
+    }
+
+    .results-container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .results-table th {
+        background: #417690;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: bold;
+    }
+
+    .results-table td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .results-table tr:hover {
+        background: #f9f9f9;
+    }
+
+    .amount-display {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #417690;
+    }
+
+    .error-row {
+        background: #ffe6e6 !important;
+    }
+
+    .success-icon {
+        color: green;
+        margin-right: 5px;
+    }
+
+    .error-icon {
+        color: red;
+        margin-right: 5px;
+    }
+
+    .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="converter-container">
+    <h1>💱 {{ title }}</h1>
+    <p style="color: #666; margin-bottom: 30px;">{{ subtitle }}</p>
+
+    <div class="converter-form">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="source_currency">Source Currency</label>
+                <select name="source_currency" id="source_currency" required>
+                    <option value="">-- Select Source Currency --</option>
+                    {% for currency in currencies %}
+                        <option value="{{ currency.code }}"
+                                {% if form_data.source_currency == currency.code %}selected{% endif %}>
+                            {{ currency.code }} - {{ currency.name }} ({{ currency.symbol }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount</label>
+                <input type="number"
+                       name="amount"
+                       id="amount"
+                       step="0.01"
+                       min="0.01"
+                       value="{{ form_data.amount|default:'100' }}"
+                       required>
+                <div class="help-text">Enter the amount you want to convert</div>
+            </div>
+
+            <div class="form-group">
+                <label for="valuation_date">Valuation Date (optional)</label>
+                <input type="date"
+                       name="valuation_date"
+                       id="valuation_date"
+                       value="{{ form_data.valuation_date|default:'' }}">
+                <div class="help-text">Leave empty to use today's rate</div>
+            </div>
+
+            <div class="form-group">
+                <label>Target Currencies</label>
+                <div class="currency-checkboxes">
+                    {% for currency in currencies %}
+                        <label class="currency-checkbox">
+                            <input type="checkbox"
+                                   name="target_currencies"
+                                   value="{{ currency.code }}"
+                                   {% if currency.code in form_data.target_currencies %}checked{% endif %}>
+                            <span>{{ currency.code }} ({{ currency.symbol }})</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <div class="help-text">Select one or more target currencies</div>
+            </div>
+
+            <button type="submit" class="submit-btn">🔄 Convert</button>
+        </form>
+    </div>
+
+    {% if results %}
+    <div class="results-container">
+        <h2>Conversion Results</h2>
+        <p style="color: #666;">
+            Converting <strong>{{ form_data.amount }} {{ form_data.source_currency }}</strong>
+            {% if form_data.valuation_date %}
+                on {{ form_data.valuation_date }}
+            {% else %}
+                on {{ results.0.date|date:"Y-m-d" }}
+            {% endif %}
+        </p>
+
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Target Currency</th>
+                    <th>Exchange Rate</th>
+                    <th>Converted Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr {% if result.error %}class="error-row"{% endif %}>
+                    <td>
+                        {% if result.error %}
+                            <span class="error-icon">❌</span>
+                        {% else %}
+                            <span class="success-icon">✅</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ result.target }}</strong></td>
+                    <td>
+                        {% if result.rate %}
+                            {{ result.rate }}
+                        {% else %}
+                            <em style="color: red;">Rate not available</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if result.converted_amount %}
+                            <span class="amount-display">{{ result.converted_amount }}</span>
+                        {% else %}
+                            <em style="color: red;">Conversion failed</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -15,18 +15,17 @@ def mock_requests_get(mocker):
 def test_get_exchange_rate_data_success(provider, mock_requests_get):
     """
     Test that get_exchange_rate_data returns the correct Decimal value
-    when the API call is successful.
+    when the API call is successful using /historical endpoint.
     """
     mock_response = Mock()
     mock_response.json.return_value = {
         "meta": {"code": 200, "disclaimer": "Usage subject to terms: https://currencybeacon.com/terms"},
         "response": {
-            "timestamp": 1716298200,
             "date": "2024-05-21",
-            "from": "USD",
-            "to": "GBP",
-            "amount": 1,
-            "value": 0.7854
+            "base": "USD",
+            "rates": {
+                "GBP": 0.7854
+            }
         }
     }
     mock_response.raise_for_status.return_value = None
@@ -36,7 +35,14 @@ def test_get_exchange_rate_data_success(provider, mock_requests_get):
 
     assert rate == Decimal("0.7854")
     mock_requests_get.assert_called_once()
-    # verify URL parameters if necessary
+
+    # Verify URL contains historical endpoint and date parameter
+    call_args = mock_requests_get.call_args
+    url = call_args[0][0]
+    assert "/historical" in url
+    assert "date=2024-05-21" in url
+    assert "base=USD" in url
+    assert "symbols=GBP" in url
 
 def test_get_exchange_rate_data_api_error(provider, mock_requests_get):
     """
@@ -57,7 +63,7 @@ def test_get_exchange_rate_data_missing_key(provider, mock_requests_get):
     mock_response = Mock()
     mock_response.json.return_value = {
         "meta": {"code": 200},
-        "response": {} # Missing value
+        "response": {"rates": {}} # Missing the currency rate
     }
     mock_response.raise_for_status.return_value = None
     mock_requests_get.return_value = mock_response

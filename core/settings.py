@@ -31,9 +31,9 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else []
 
 
 # Application definition
@@ -153,6 +153,31 @@ CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# Celery Beat Schedule - Periodic Tasks
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    # Sync exchange rates every day at 00:30 UTC
+    'sync-rates-daily': {
+        'task': 'sync_exchange_rates_for_today',
+        'schedule': crontab(hour=0, minute=30),
+        'options': {
+            'expires': 3600,  # Task expires after 1 hour if not executed
+        }
+    },
+    # Clean up old rates every week on Sunday at 02:00 UTC
+    'cleanup-old-rates': {
+        'task': 'cleanup_old_exchange_rates',
+        'schedule': crontab(hour=2, minute=0, day_of_week=0),
+        'kwargs': {'days_to_keep': 90},
+    },
+    # Check provider health every 6 hours
+    'check-providers-health': {
+        'task': 'check_providers_health',
+        'schedule': crontab(minute=0, hour='*/6'),
+    },
+}
 
 
 # Currency Beacon API Configuration
