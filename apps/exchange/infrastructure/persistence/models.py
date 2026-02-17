@@ -77,6 +77,7 @@ class ProviderName(models.TextChoices):
 
     CURRENCY_BEACON = "currency_beacon", "CurrencyBeacon"
     MOCK = "mock", "Mock"
+    EXCHANGE_RATE = "exchange_rate", "ExchangeRate"
 
 
 class Provider(BaseModel):

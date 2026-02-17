@@ -27,4 +27,5 @@ urlpatterns = [
 
     # Versioned API
     path('api/v1/exchange/', include('apps.exchange.api.v1.urls')),
+    path('api/v2/exchange/', include('apps.exchange.api.v2.urls')),
 ]

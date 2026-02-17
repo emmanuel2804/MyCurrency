@@ -255,6 +255,37 @@ docker-compose restart worker
 
 ---
 
+## Possible Improvements
+
+### Performance & Scalability
+- **Redis Caching**: Cache frequently accessed rates (EUR/USD, etc.) to reduce database queries
+- **Rate Limiting**: Implement API throttling per user/IP to prevent abuse
+- **Connection Pooling**: Optimize database connections for high traffic
+
+### Security & Authentication
+- **JWT Authentication**: Secure API endpoints with token-based authentication
+- **API Keys**: Generate API keys for external consumers
+- **HTTPS Only**: Enforce secure connections in production
+
+### Features
+- **WebSockets**: Real-time exchange rate updates for subscribed clients
+- **API v2 with GraphQL**: Alternative query language for flexible data fetching
+- **Multiple Base Currencies**: Support conversion between any currency pair, not just from one base
+- **Historical Charts**: Visualize exchange rate trends over time
+
+### DevOps & Monitoring
+- **CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
+- **Monitoring**: Prometheus + Grafana for metrics and alerting
+- **Logging**: Centralized logging with ELK stack (Elasticsearch, Logstash, Kibana)
+- **Health Checks**: Endpoint monitoring and automated alerts
+
+### Data & Providers
+- **Additional Providers**: Integrate Fixer.io, Open Exchange Rates, ExchangeRate-API
+- **Provider Health Dashboard**: Real-time status of all configured providers
+- **Automatic Failover**: Smart detection and switching when providers fail
+
+---
+
 ## License
 
 This project is for educational purposes.

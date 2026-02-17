@@ -27,7 +27,7 @@ def create_initial_data(apps, schema_editor):
     # Provider data
     providers = [
         {"name": "currency_beacon", "priority": 1, "is_active": True},
-        {"name": "mock", "priority": 2, "is_active": True},
+        {"name": "mock", "priority": 3, "is_active": True},
     ]
 
     for provider_data in providers:

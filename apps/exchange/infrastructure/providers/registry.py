@@ -7,13 +7,14 @@ from apps.exchange.infrastructure.persistence.models import ProviderName
 from apps.exchange.domain.interfaces import BaseExchangeRateProvider
 from apps.exchange.infrastructure.providers.currency_beacon import CurrencyBeaconProvider
 from apps.exchange.infrastructure.providers.mock import MockProvider
+from apps.exchange.infrastructure.providers.exchange_rate import ExchangeRateProvider
 from apps.exchange.infrastructure.persistence.models import Provider
 
 
-# Registry: Maps ProviderName enum to the corresponding adapter class
 PROVIDER_REGISTRY: dict[str, type[BaseExchangeRateProvider]] = {
     ProviderName.CURRENCY_BEACON: CurrencyBeaconProvider,
     ProviderName.MOCK: MockProvider,
+    ProviderName.EXCHANGE_RATE: ExchangeRateProvider,
 }
 
 
