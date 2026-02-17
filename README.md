@@ -32,7 +32,7 @@ docker-compose run --rm web python manage.py createsuperuser
 - **Django 5.2** + **Django REST Framework**
 - **PostgreSQL** (database)
 - **Redis** (Celery broker)
-- **Celery** + **Celery Beat** (async tasks)
+- **Celery** (async tasks)
 - **Poetry** (dependency management)
 - **Docker** + **Docker Compose**
 - **drf-spectacular** (OpenAPI/Swagger)
@@ -78,7 +78,7 @@ apps/exchange/
 
 **Concurrency for Historical Data**
 
-Uses `asyncio` + `aiohttp` for I/O-bound operations instead of parallelism.
+Uses `asyncio` + `asyncio.to_thread` for I/O-bound operations instead of parallelism.
 
 **Why concurrency over parallelism?**
 
@@ -181,16 +181,30 @@ python manage.py load_historical --from 2024-01-01 --to 2024-12-31 --sync
 
 ### How It Works
 
-1. **Concurrent I/O**: Uses `asyncio` + `aiohttp` for concurrent HTTP requests
+1. **Provider selection**: Uses the active provider with the highest priority (lowest priority number). Configure providers via `/admin/`.
+
+2. **Concurrent I/O**: Uses `asyncio.to_thread` to run provider calls concurrently
    - Fetches dozens of currency pairs simultaneously
    - Network I/O is the bottleneck, not CPU
 
-2. **Smart Fetching**: For each date in the range:
+3. **Smart Fetching**: For each date in the range:
    - Fetches rates for ALL currency pairs
    - Skips rates that already exist in database
-   - Uses the provider fallback mechanism
 
-3. **Efficient Storage**: Uses Django's `bulk_create()` to insert rates in batches
+4. **Efficient Storage**: Uses Django's `bulk_create()` to insert rates in batches
+
+### Loading real-ish data for testing
+
+To populate the database with large volumes of realistic data without consuming external API quota:
+
+1. Go to `/admin/` and set the **Mock** provider as the only active one (disable CurrencyBeacon and ExchangeRate)
+2. Run the historical data command for the desired date range:
+
+```bash
+docker-compose run --rm web python manage.py load_historical --from 2024-01-01 --to 2024-12-31 --sync
+```
+
+The Mock provider generates rates based on real-world base values (EUR/USD ≈ 0.85, GBP/USD ≈ 0.73) with ±2% random variation seeded by date, so the same date always produces the same rate.
 
 ---
 
