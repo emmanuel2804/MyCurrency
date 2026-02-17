@@ -47,7 +47,7 @@ class ExchangeRateProvider(BaseExchangeRateProvider):
             data = response.json()
 
             # Response format: {"response": {"rates": {"EUR": 0.85}}}
-            rate = data['response']['conversion_rates']
+            rate = data['conversion_rate']
             return Decimal(str(rate))
 
         except requests.exceptions.Timeout:

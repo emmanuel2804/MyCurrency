@@ -8,7 +8,12 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:8000/api/v1",
+			"value": "http://localhost:8000/api/v1/exchange",
+			"type": "string"
+		},
+		{
+			"key": "base_url_v2",
+			"value": "http://localhost:8000/api/v2/exchange",
 			"type": "string"
 		}
 	],
@@ -23,8 +28,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/currencies/",
-							"host": ["{{base_url}}"],
-							"path": ["currencies", ""]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"currencies",
+								""
+							]
 						}
 					}
 				},
@@ -44,8 +54,13 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/currencies/",
-							"host": ["{{base_url}}"],
-							"path": ["currencies", ""]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"currencies",
+								""
+							]
 						}
 					}
 				},
@@ -56,8 +71,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/currencies/:id/",
-							"host": ["{{base_url}}"],
-							"path": ["currencies", ":id", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"currencies",
+								":id",
+								""
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -83,8 +104,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/currencies/:id/",
-							"host": ["{{base_url}}"],
-							"path": ["currencies", ":id", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"currencies",
+								":id",
+								""
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -101,8 +128,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/currencies/:id/",
-							"host": ["{{base_url}}"],
-							"path": ["currencies", ":id", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"currencies",
+								":id",
+								""
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -115,7 +148,7 @@
 			]
 		},
 		{
-			"name": "Exchange Rates",
+			"name": "Exchange Rates v1",
 			"item": [
 				{
 					"name": "List Rates",
@@ -124,8 +157,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/rates/",
-							"host": ["{{base_url}}"],
-							"path": ["rates", ""]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"rates",
+								""
+							]
 						}
 					}
 				},
@@ -136,8 +174,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/rates/time-series/?source_currency=EUR&date_from=2024-01-01&date_to=2024-01-31",
-							"host": ["{{base_url}}"],
-							"path": ["rates", "time-series", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"rates",
+								"time-series",
+								""
+							],
 							"query": [
 								{
 									"key": "source_currency",
@@ -156,7 +200,7 @@
 								}
 							]
 						},
-						"description": "Get time series of exchange rates for all currencies from a base currency"
+						"description": "Get time series of exchange rates for all currencies. Uses active providers with fallback chain."
 					}
 				},
 				{
@@ -166,8 +210,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/rates/convert/?source_currency=EUR&exchanged_currency=USD&amount=100",
-							"host": ["{{base_url}}"],
-							"path": ["rates", "convert", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"rates",
+								"convert",
+								""
+							],
 							"query": [
 								{
 									"key": "source_currency",
@@ -192,7 +242,49 @@
 								}
 							]
 						},
-						"description": "Convert amount from one currency to another"
+						"description": "Convert amount from one currency to another. Uses active providers with fallback chain."
+					}
+				}
+			]
+		},
+		{
+			"name": "Exchange Rates v2",
+			"description": "ExchangeRate provider exclusively. Returns 503 if provider is not configured.",
+			"item": [
+				{
+					"name": "Convert Amount",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_v2}}/rates/convert/?source_currency=EUR&exchanged_currency=USD&amount=100",
+							"host": [
+								"{{base_url_v2}}"
+							],
+							"path": [
+								"rates",
+								"convert",
+								""
+							],
+							"query": [
+								{
+									"key": "source_currency",
+									"value": "EUR",
+									"description": "Source currency code"
+								},
+								{
+									"key": "exchanged_currency",
+									"value": "USD",
+									"description": "Target currency code"
+								},
+								{
+									"key": "amount",
+									"value": "100",
+									"description": "Amount to convert"
+								}
+							]
+						},
+						"description": "Convert amount using ExchangeRate provider exclusively. Only returns rates for today's date."
 					}
 				}
 			]
@@ -207,8 +299,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/providers/",
-							"host": ["{{base_url}}"],
-							"path": ["providers", ""]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								""
+							]
 						}
 					}
 				},
@@ -228,8 +325,13 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/providers/",
-							"host": ["{{base_url}}"],
-							"path": ["providers", ""]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								""
+							]
 						}
 					}
 				},
@@ -240,8 +342,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/providers/:id/",
-							"host": ["{{base_url}}"],
-							"path": ["providers", ":id", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								":id",
+								""
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -267,8 +375,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/providers/:id/",
-							"host": ["{{base_url}}"],
-							"path": ["providers", ":id", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								":id",
+								""
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -294,8 +408,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/providers/:id/",
-							"host": ["{{base_url}}"],
-							"path": ["providers", ":id", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								":id",
+								""
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -313,8 +433,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/providers/:id/",
-							"host": ["{{base_url}}"],
-							"path": ["providers", ":id", ""],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								":id",
+								""
+							],
 							"variable": [
 								{
 									"key": "id",

@@ -112,6 +112,10 @@ CELERY_RESULT_BACKEND=redis://redis:6379/0
 # CurrencyBeacon API
 CURRENCY_BEACON_API_KEY=your-api-key-here
 CURRENCY_BEACON_URL=https://api.currencybeacon.com/v1
+
+# ExchangeRate
+EXCHANGERATE_KEY=your-api-key-here
+EXCHANGERATE_URL=https://v6.exchangerate-api.com/v6
 ```
 
 ---
@@ -131,7 +135,7 @@ docker-compose run --rm web python manage.py migrate
 docker-compose run --rm web python manage.py createsuperuser
 ```
 
-### Option 2: Local Development
+### Option 2: Local Development (Not tested)
 
 ```bash
 # Install dependencies
@@ -151,9 +155,6 @@ redis-server
 
 # Start Celery worker (in another terminal)
 celery -A core worker --loglevel=info
-
-# Start Celery beat (in another terminal)
-celery -A core beat --loglevel=info
 
 # Run development server
 python manage.py runserver
@@ -190,11 +191,6 @@ python manage.py load_historical --from 2024-01-01 --to 2024-12-31 --sync
    - Uses the provider fallback mechanism
 
 3. **Efficient Storage**: Uses Django's `bulk_create()` to insert rates in batches
-
-### Performance
-
-- **4 currencies** × **3 months** = ~720 rates → ~30 seconds
-- **10 currencies** × **1 year** = ~32,850 rates → ~5 minutes
 
 ---
 
@@ -283,15 +279,3 @@ docker-compose restart worker
 - **Additional Providers**: Integrate Fixer.io, Open Exchange Rates, ExchangeRate-API
 - **Provider Health Dashboard**: Real-time status of all configured providers
 - **Automatic Failover**: Smart detection and switching when providers fail
-
----
-
-## License
-
-This project is for educational purposes.
-
----
-
-## Author
-
-Built with Django + DRF
