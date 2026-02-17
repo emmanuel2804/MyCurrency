@@ -154,29 +154,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-# Celery Beat Schedule - Periodic Tasks
-from celery.schedules import crontab
-
-CELERY_BEAT_SCHEDULE = {
-    # TODO: Uncomment when tasks are implemented
-    # 'sync-rates-daily': {
-    #     'task': 'sync_exchange_rates_for_today',
-    #     'schedule': crontab(hour=0, minute=30),
-    #     'options': {
-    #         'expires': 3600,
-    #     }
-    # },
-    # 'cleanup-old-rates': {
-    #     'task': 'cleanup_old_exchange_rates',
-    #     'schedule': crontab(hour=2, minute=0, day_of_week=0),
-    #     'kwargs': {'days_to_keep': 90},
-    # },
-    # 'check-providers-health': {
-    #     'task': 'check_providers_health',
-    #     'schedule': crontab(minute=0, hour='*/6'),
-    # },
-}
-
 
 # Currency Beacon API Configuration
 

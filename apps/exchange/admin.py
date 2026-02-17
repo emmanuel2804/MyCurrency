@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin import AdminSite
 from django.urls import path
 from django.shortcuts import render
 from decimal import Decimal
@@ -13,54 +14,37 @@ from apps.exchange.infrastructure.persistence.models import (
 from apps.exchange.domain.services import ExchangeRateService
 
 
-@admin.register(Currency)
-class CurrencyAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'symbol', 'created_at')
-    list_filter = ('created_at',)
-    search_fields = ('code', 'name')
-    readonly_fields = ('id', 'created_at', 'updated_at')
-    ordering = ('code',)
+class ExchangeAdminSite(AdminSite):
+    def get_app_list(self, request, app_label=None):
+        app_list = super().get_app_list(request, app_label)
+        app_list.append({
+            'name': 'Tools',
+            'app_label': 'tools',
+            'app_url': '#',
+            'has_module_perms': True,
+            'models': [{
+                'name': 'Currency Converter',
+                'object_name': 'CurrencyConverter',
+                'admin_url': '/admin/converter/',
+                'view_only': True,
+                'add_url': None,
+                'perms': {'add': False, 'change': False, 'delete': False, 'view': True},
+            }],
+        })
+        return app_list
 
-
-@admin.register(CurrencyExchangeRate)
-class CurrencyExchangeRateAdmin(admin.ModelAdmin):
-    list_display = ('get_currency_pair', 'rate_value', 'valuation_date', 'created_at')
-    list_filter = ('valuation_date', 'source_currency', 'exchanged_currency')
-    search_fields = ('source_currency__code', 'exchanged_currency__code')
-    readonly_fields = ('id', 'created_at', 'updated_at')
-    date_hierarchy = 'valuation_date'
-    ordering = ('-valuation_date', 'source_currency__code')
-
-    def get_currency_pair(self, obj: CurrencyExchangeRate) -> str:
-        return f"{obj.source_currency.code}/{obj.exchanged_currency.code}"
-    get_currency_pair.short_description = 'Currency Pair'  # type: ignore
-
-
-@admin.register(Provider)
-class ProviderAdmin(admin.ModelAdmin):
-    list_display = ('name', 'priority', 'is_active', 'created_at')
-    list_filter = ('is_active', 'name')
-    search_fields = ('name',)
-    readonly_fields = ('id', 'created_at', 'updated_at')
-    ordering = ('priority',)
-
-
-class CurrencyConverterAdmin:
-    def __init__(self) -> None:
-        self.admin_site: Any = None
-
-    def get_urls(self) -> list:
+    def get_urls(self):  # type: ignore[override]
         return [
             path(
                 'converter/',
-                self.admin_site.admin_view(self.converter_view),  # type: ignore
+                self.admin_view(self.converter_view),
                 name='exchange_converter'
             ),
-        ]
+        ] + super().get_urls()
 
     def converter_view(self, request: Any) -> Any:
         context = {
-            **self.admin_site.each_context(request),  # type: ignore
+            **self.each_context(request),
             'title': 'Currency Converter',
             'subtitle': 'Convert amounts between currencies',
             'currencies': Currency.objects.all().order_by('code'),
@@ -121,9 +105,38 @@ class CurrencyConverterAdmin:
         return render(request, 'admin/exchange/converter.html', context)
 
 
-converter_admin = CurrencyConverterAdmin()
-converter_admin.admin_site = admin.site  # type: ignore
+admin_site = ExchangeAdminSite(name='admin')
 
-admin.site.get_urls = (
-    lambda original: lambda: original() + converter_admin.get_urls()
-)(admin.site.get_urls)
+
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'symbol', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('code', 'name')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('code',)
+
+
+class CurrencyExchangeRateAdmin(admin.ModelAdmin):
+    list_display = ('get_currency_pair', 'rate_value', 'valuation_date', 'created_at')
+    list_filter = ('valuation_date', 'source_currency', 'exchanged_currency')
+    search_fields = ('source_currency__code', 'exchanged_currency__code')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    date_hierarchy = 'valuation_date'
+    ordering = ('-valuation_date', 'source_currency__code')
+
+    def get_currency_pair(self, obj: CurrencyExchangeRate) -> str:
+        return f"{obj.source_currency.code}/{obj.exchanged_currency.code}"
+    get_currency_pair.short_description = 'Currency Pair'  # type: ignore
+
+
+class ProviderAdmin(admin.ModelAdmin):
+    list_display = ('name', 'priority', 'is_active', 'created_at')
+    list_filter = ('is_active', 'name')
+    search_fields = ('name',)
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('priority',)
+
+
+admin_site.register(Currency, CurrencyAdmin)
+admin_site.register(CurrencyExchangeRate, CurrencyExchangeRateAdmin)
+admin_site.register(Provider, ProviderAdmin)

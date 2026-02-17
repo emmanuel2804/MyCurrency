@@ -49,16 +49,6 @@ services:
       - redis
       - db
 
-  beat:
-    build:
-      context: .
-    command: celery -A core beat --loglevel=info
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    depends_on:
-      - redis
 
 volumes:
   postgres_data:
